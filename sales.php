@@ -8,11 +8,11 @@ include 'includes/header.php';
 <!-- Filters -->
 <div class="toolbar">
     <div class="filter-group">
-        <label style="font-weight: 600; font-size: 0.85rem; color: var(--gray-600);">From:</label>
-        <input type="date" class="form-control" id="salesDateFrom" style="width: 160px;" value="<?php echo date('Y-m-01'); ?>">
-        <label style="font-weight: 600; font-size: 0.85rem; color: var(--gray-600);">To:</label>
-        <input type="date" class="form-control" id="salesDateTo" style="width: 160px;" value="<?php echo date('Y-m-d'); ?>">
-        <button class="btn btn-complement btn-sm" onclick="loadSalesReport()">Generate Report</button>
+        <label style="font-weight: 700; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">From:</label>
+        <input type="date" class="form-control" id="salesDateFrom" style="width: 170px;" value="<?php echo date('Y-m-01'); ?>">
+        <label style="font-weight: 700; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-left: 10px;">To:</label>
+        <input type="date" class="form-control" id="salesDateTo" style="width: 170px;" value="<?php echo date('Y-m-d'); ?>">
+        <button class="btn btn-primary btn-sm" style="margin-left: 15px;" onclick="loadSalesReport()">Generate Report</button>
     </div>
 </div>
 

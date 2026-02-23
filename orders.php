@@ -19,20 +19,22 @@ include 'includes/header.php';
 <div class="tab-content active" data-tab-content-group="orders" data-tab-content="new-order">
     <div class="order-layout">
         <!-- Menu Items Grid -->
-        <div>
+        <div class="menu-selection-side">
             <div class="toolbar">
                 <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="orderMenuSearch" placeholder="Search menu..." onkeyup="loadOrderMenu()">
+                    <svg class="search-icon icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <input type="text" id="orderMenuSearch" class="form-control" placeholder="Search menu items..." onkeyup="loadOrderMenu()">
                 </div>
                 <div class="filter-group">
-                    <select class="form-control" id="orderCategoryFilter" onchange="loadOrderMenu()" style="width: 170px;">
+                    <select class="form-control" id="orderCategoryFilter" onchange="loadOrderMenu()" style="width: 180px;">
                         <option value="">All Categories</option>
                     </select>
                 </div>
             </div>
-            <div class="menu-grid" id="orderMenuGrid">
-                <div class="text-center text-muted" style="grid-column: 1/-1; padding: 40px;">Loading menu...</div>
+            <div class="menu-grid" id="orderMenuGrid" style="margin-top: 0; padding-bottom: 20px;">
+                <div class="text-center text-muted w-100" style="padding: 40px;">Loading menu...</div>
             </div>
         </div>
 
@@ -223,16 +225,21 @@ include 'includes/header.php';
             return `
                 <div class="cart-item">
                     <div class="cart-item-info">
-                        <div class="cart-item-name">${escapeHtml(item.name)}</div>
-                        <div class="cart-item-price">₱${item.price.toFixed(2)} each</div>
+                        <div class="cart-item-title">${escapeHtml(item.name)}</div>
+                        <div class="cart-item-price">₱${item.price.toFixed(2)}</div>
                     </div>
-                    <div class="qty-controls">
-                        <button onclick="updateQty(${item.id}, -1)">−</button>
-                        <span class="qty-value">${item.qty}</span>
-                        <button onclick="updateQty(${item.id}, 1)">+</button>
+                    
+                    <div class="cart-item-actions">
+                        <button class="qty-btn" onclick="updateQty(${item.id}, -1)">−</button>
+                        <span style="font-weight:700; width:20px; text-align:center; font-size:0.95rem;">${item.qty}</span>
+                        <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
                     </div>
-                    <div class="cart-item-subtotal">₱${subtotal.toFixed(2)}</div>
-                    <button class="cart-remove-btn" onclick="removeFromCart(${item.id})" title="Remove">×</button>
+
+                    <div style="font-weight:700; color:var(--primary); min-width: 60px; text-align:right;">₱${subtotal.toFixed(2)}</div>
+                    
+                    <button class="action-btn delete" onclick="removeFromCart(${item.id})" title="Remove" style="margin-left: 10px;">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
                 </div>
             `;
         }).join('');

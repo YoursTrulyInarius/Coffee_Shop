@@ -1,7 +1,16 @@
+<?php
+// Retrieve current page for consistency with header
+$adminPages = ['admin_dashboard', 'orders', 'sales', 'menu', 'products', 'categories'];
+$currentPage = basename($_SERVER['PHP_SELF'], '.php');
+$isAdminPage = in_array($currentPage, $adminPages);
+?>
 
-            </div><!-- /.page-body -->
+<?php if ($isAdminPage): ?>
+            </main><!-- /.admin-main -->
+        </div><!-- /.admin-layout -->
+<?php else: ?>
         </main><!-- /.main-content -->
-    </div><!-- /.app-wrapper -->
+<?php endif; ?>
 
     <!-- Confirm Dialog (shared) -->
     <div class="modal-overlay" id="confirmModal">

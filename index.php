@@ -1,132 +1,156 @@
 <?php
-require_once 'includes/auth_check.php';
 require_once 'config/database.php';
-
-// index.php is a public page (isPublic = true)
-checkAuth(null, true);
-
 $conn = getConnection();
-$pageTitle = 'Explore Our Menu';
 
-// Fetch products for customer view
-$categories = $conn->query("SELECT * FROM categories ORDER BY name");
-$conn->close();
+// Fetch categories for filtering
+$categories_query = "SELECT * FROM categories ORDER BY name ASC";
+$categories_result = $conn->query($categories_query);
+$categories = [];
+while($row = $categories_result->fetch_assoc()) {
+    $categories[] = $row;
+}
 
 include 'includes/header.php';
 ?>
 
-<!-- Hero Wrapper -->
-<div class="hero-wrapper">
-    <div class="hero-section">
-        <div class="hero-badge">The Art of Coffee</div>
-        <h1>Brewed to Perfection</h1>
-        <p>Experience the finest selection of handcrafted beans and artisanal treats, delivered with a touch of elegance.</p>
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="hero-content">
+            <span class="hero-tag">A Modern Coffee Experience</span>
+            <h1>Crafted for the<br>Curious Mind</h1>
+            <p>Step away from the ordinary and immerse yourself in the art of artisanal brewing, where every cup tells a story of passion and precision.</p>
+            <div class="hero-actions">
+                <a href="#menu" class="btn btn-primary">Discover Menu</a>
+                <a href="#location" class="btn btn-outline">Find Us</a>
+            </div>
+        </div>
     </div>
-</div>
+</section>
 
-<!-- Glassmorphism Controls Section -->
-<div class="controls-container">
-    <div class="controls-glass">
-        <!-- Search Box -->
-        <div class="search-box">
-            <input type="text" id="catalogSearch" placeholder="Find your perfect brew..." onkeyup="filterCatalog()">
-            <span class="search-icon">🔍</span>
+<!-- Menu Display Section -->
+<section id="menu" class="section">
+    <div style="width: 100%;">
+        <div class="section-intro-block">
+            <span class="hero-tag" style="background: var(--clay); color: var(--white); padding: 4px 12px; border-radius: 4px;">Foundations</span>
+            <h2 class="section-title">The Seasonal Palette</h2>
+            <p style="max-width: 600px; margin: 0 auto; color: var(--text-muted); font-size: 1.1rem;">
+                Crafted from earth. Brewed for soul. Experience our latest small-batch arrivals.
+            </p>
+            
+            <div class="cat-pills" style="margin-top: 40px;">
+                <div class="pill active" onclick="loadMenu('all', this)">All Collections</div>
+                <?php foreach($categories as $cat): ?>
+                    <div class="pill" onclick="loadMenu(<?php echo $cat['id']; ?>, this)">
+                        <?php echo htmlspecialchars($cat['name']); ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
-        
-        <!-- Advanced Category Navigation -->
-        <div class="category-nav">
-            <div class="cat-pill active" onclick="selectCategory(0, this)">Signature All</div>
-            <?php while($cat = $categories->fetch_assoc()): ?>
-                <div class="cat-pill" onclick="selectCategory(<?php echo $cat['id']; ?>, this)">
-                    <?php echo htmlspecialchars($cat['name']); ?>
-                </div>
-            <?php endwhile; ?>
-        </div>
-    </div>
-</div>
 
-<!-- Main Grid -->
-<div class="page-body" style="padding-top: 20px;">
-    <div class="menu-grid" id="catalogGrid">
-        <div class="empty-state">
-            <div class="empty-icon">☕</div>
-            <h2 style="color: var(--primary); font-weight: 800;">Our Menu is Brewing...</h2>
-            <p>We're currently perfecting our selection. Please check back in a few moments!</p>
+        <div class="container" style="margin-top: 60px;">
+            <div class="menu-grid" id="menuGrid">
+                <!-- AJAX content -->
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+<!-- Location Section -->
+<section id="location" class="section section-alt">
+    <div class="location-grid">
+        <div class="location-map-side">
+            <img src="https://images.unsplash.com/photo-1559925393-8be0ec4767c8?q=80&w=1400" alt="Yours Truly SF Roastery">
+        </div>
+        <div class="location-info-side">
+            <span class="hero-tag" style="color: var(--accent);">Our Home</span>
+            <h2>Established<br>In San Francisco</h2>
+            
+            <div class="info-block" style="margin-top: 50px;">
+                <h4>The Address</h4>
+                <p>123 Coffee Lane, Artisanal District<br>San Francisco, CA 94103</p>
+            </div>
+            
+            <div class="info-block">
+                <h4>Open House</h4>
+                <p>Mon - Fri: 7:00 AM - 8:00 PM<br>Sat - Sun: 8:00 AM - 9:00 PM</p>
+            </div>
+            
+            <div class="info-block">
+                <h4>Say Hello</h4>
+                <p>Phone: (555) 123-4567<br>Email: hello@yours-truly.coffee</p>
+            </div>
+        </div>
+    </div>
+</section>
 
 <script>
-    let currentCategoryId = 0;
+document.addEventListener('DOMContentLoaded', function() {
+    loadMenu('all');
 
-    function selectCategory(id, el) {
-        currentCategoryId = id;
-        
-        // Update UI
-        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-        el.classList.add('active');
-        
-        filterCatalog();
+    // --- Dynamic Navigation (ScrollSpy) ---
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.header-menu a');
+
+    const observerOption = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.3
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.getAttribute('id') || 'home';
+                updateActiveLink(id);
+            }
+        });
+    }, observerOption);
+
+    // Observe all sections including a "home" target if possible
+    sections.forEach(section => observer.observe(section));
+    // Also handle top of page
+    const hero = document.querySelector('.hero-section');
+    if(hero) {
+        if(!hero.id) hero.id = 'home';
+        observer.observe(hero);
     }
 
-    function filterCatalog() {
-        const search = document.getElementById('catalogSearch').value;
-
-        ajaxRequest('ajax/menu_actions.php', {
-            action: 'list',
-            search: search,
-            category_id: currentCategoryId
-        }, function(res) {
-            const grid = document.getElementById('catalogGrid');
-            if (res.success && Array.isArray(res.data)) {
-                const availableItems = res.data.filter(item => item.available == 1);
-                
-                if (availableItems.length > 0) {
-                    grid.innerHTML = availableItems.map(item => `
-                        <div class="menu-item-card">
-                            <div class="item-image-wrapper">
-                                ${item.image ? `<img src="uploads/${item.image}" alt="${escapeHtml(item.name)}">` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:4rem;background:#F5F0EB;">☕</div>'}
-                                <div class="item-badge">${escapeHtml(item.category_name)}</div>
-                            </div>
-                            <div class="item-content">
-                                <div class="item-name">${escapeHtml(item.name)}</div>
-                                <div class="item-description">${escapeHtml(item.description || '')}</div>
-                                <div class="item-footer">
-                                    <div class="item-price">₱${parseFloat(item.price).toFixed(2)}</div>
-                                    <div class="order-btn">Order Now</div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    showEmptyState();
-                }
-            } else {
-                showEmptyState();
+    function updateActiveLink(id) {
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href');
+            if (href === 'index.php' && id === 'home') {
+                link.classList.add('active');
+            } else if (href.includes('#' + id)) {
+                link.classList.add('active');
             }
         });
     }
 
-    function showEmptyState() {
-        document.getElementById('catalogGrid').innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">🔍</div>
-                <h2 style="color: var(--primary); font-weight: 800;">No Matches Found</h2>
-                <p>We couldn't find any coffee matching your criteria. Try another search or category!</p>
-            </div>
-        `;
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    // Initial load
-    document.addEventListener('DOMContentLoaded', function() {
-        filterCatalog();
+    // Header Scroll Effect
+    window.addEventListener('scroll', function() {
+        const header = document.querySelector('.main-header');
+        if (window.scrollY > 50) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
     });
+});
+
+function loadMenu(catId, el) {
+    if(el) {
+        document.querySelectorAll('.cat-pills .pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    fetch(`ajax/get_menu_items.php?category_id=${catId}`)
+        .then(r => r.text())
+        .then(html => {
+            document.getElementById('menuGrid').innerHTML = html;
+        });
+}
 </script>
 
 <?php include 'includes/footer.php'; ?>

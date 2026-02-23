@@ -12,85 +12,98 @@ $fullName = $_SESSION['full_name'] ?? 'Guest';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coffee Shop - <?php echo ucfirst($currentPage); ?></title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <title>Coffee Shop | Artisanal Brewing</title>
+    <link rel="stylesheet" href="assets/css/main.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>">
-
-    <!-- App Scripts -->
     <script src="assets/js/script.js"></script>
 </head>
-<body>
-    <div class="app-wrapper">
-        <!-- Sidebar Overlay (mobile) -->
-        <div class="sidebar-overlay" onclick="closeSidebar()"></div>
-
-        <!-- Sidebar -->
-        <aside class="sidebar">
+<?php 
+// List of pages that should use the Sidebar Layout
+$adminPages = ['admin_dashboard', 'orders', 'sales', 'menu', 'products', 'categories'];
+$isAdminPage = in_array($currentPage, $adminPages);
+?>
+<body class="<?php echo $isAdminPage ? 'admin-layout' : ''; ?>">
+    <?php if ($isAdminPage): ?>
+        <!-- Admin Sidebar Navigation -->
+        <aside class="admin-sidebar">
             <div class="sidebar-brand">
-                <span class="brand-icon">☕</span>
-                <h2>Coffee Shop</h2>
+                <a href="index.php"><h2>Coffee Shop</h2></a>
             </div>
-
-            <nav class="sidebar-menu">
-                <div class="menu-label">Main</div>
-                <?php if ($userRole === 'admin'): ?>
-                    <div class="menu-label">Administration</div>
-                    <a href="admin_dashboard.php" class="<?php echo $currentPage === 'admin_dashboard' ? 'active' : ''; ?>">
-                        <span class="menu-icon">📊</span>
-                        Dashboard
-                    </a>
-                    <a href="menu.php" class="<?php echo $currentPage === 'menu' ? 'active' : ''; ?>">
-                        <span class="menu-icon">⚙️</span>
-                        Manage Menu
-                    </a>
-                    <a href="orders.php" class="<?php echo $currentPage === 'orders' ? 'active' : ''; ?>">
-                        <span class="menu-icon">🛒</span>
-                        Manage Orders
-                    </a>
-                    <a href="sales.php" class="<?php echo $currentPage === 'sales' ? 'active' : ''; ?>">
-                        <span class="menu-icon">💰</span>
-                        Sales Report
-                    </a>
-                <?php endif; ?>
+            
+            <nav class="sidebar-nav">
+                <a href="admin_dashboard.php" class="nav-link <?php echo $currentPage === 'admin_dashboard' ? 'active' : ''; ?>">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="orders.php" class="nav-link <?php echo $currentPage === 'orders' ? 'active' : ''; ?>">
+                    <span class="icon">🛒</span>
+                    <span>Orders</span>
+                </a>
+                <a href="menu.php" class="nav-link <?php echo $currentPage === 'menu' ? 'active' : ''; ?>">
+                    <span class="icon">📋</span>
+                    <span>Menu</span>
+                </a>
+                <a href="sales.php" class="nav-link <?php echo $currentPage === 'sales' ? 'active' : ''; ?>">
+                    <span class="icon">💰</span>
+                    <span>Sales</span>
+                </a>
             </nav>
 
-            <div class="sidebar-user">
-                <?php if ($isLoggedIn): ?>
-                    <div class="user-panel">
-                        <div class="user-avatar">
-                            <?php echo strtoupper(substr($fullName, 0, 1)); ?>
-                        </div>
-                        <div class="user-info">
-                            <div class="user-name"><?php echo htmlspecialchars($fullName); ?></div>
-                            <div class="user-role"><?php echo htmlspecialchars($userRole); ?></div>
-                        </div>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar"><?php echo strtoupper(substr($fullName, 0, 1)); ?></div>
+                    <div class="user-details">
+                        <h5><?php echo htmlspecialchars($fullName); ?></h5>
+                        <p>Administrator</p>
                     </div>
-                    <a href="logout.php" class="logout-btn-wide">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M16 17v-3H9v-4h7V7l5 5-5 5M14 2a2 2 0 012 2v2h-2V4H5v16h9v-2h2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2h9z"/></svg>
-                        <span>Sign Out</span>
-                    </a>
-                <?php else: ?>
-                    <div class="user-info text-center" style="width: 100%;">
-                        <a href="login.php" class="btn btn-complement btn-sm" style="width: 100%;">Staff Login</a>
-                    </div>
-                <?php endif; ?>
+                </div>
+                <a href="logout.php" class="btn-signout">Sign Out</a>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Top Navigation -->
-            <div class="top-nav">
-                <div class="nav-left">
-                    <button class="hamburger" onclick="toggleSidebar()">☰</button>
-                    <span class="page-title"><?php echo $pageTitle ?? ucfirst($currentPage); ?></span>
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><?php echo $pageTitle ?? 'Management'; ?></h1>
+                <div class="admin-actions">
+                    <!-- Placeholder for top-bar actions -->
                 </div>
-                <div class="nav-right">
-                    <span style="font-size: 0.82rem; color: var(--gray-500);">
-                        <?php echo date('l, M d, Y'); ?>
-                    </span>
+            </header>
+    <?php else: ?>
+        <!-- Public Top Navigation -->
+        <header class="main-header">
+            <div class="container header-inner">
+                <div class="header-left">
+                    <a href="index.php" class="header-brand">
+                        <h2>Coffee Shop</h2>
+                    </a>
+                </div>
+
+                <nav class="header-menu">
+                    <a href="index.php" id="nav-home">Home</a>
+                    <a href="index.php#menu">Menu</a>
+                    <a href="index.php#location">Location</a>
+                    <?php if ($userRole === 'admin'): ?>
+                        <a href="admin_dashboard.php" class="<?php echo $currentPage === 'admin_dashboard' ? 'active' : ''; ?>">Admin</a>
+                    <?php endif; ?>
+                </nav>
+
+                <div class="header-right">
+                    <?php if ($isLoggedIn): ?>
+                        <div class="user-dropdown">
+                            <div class="user-trigger">
+                                <span class="user-name-small"><?php echo htmlspecialchars($fullName); ?></span>
+                                <svg style="width:20px;height:20px;fill:var(--primary)" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                            </div>
+                            <div class="dropdown-content">
+                                <a href="logout.php">Sign Out</a>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <a href="login.php" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.8rem;">Staff Login</a>
+                    <?php endif; ?>
                 </div>
             </div>
+        </header>
 
-            <!-- Page Body -->
-            <div class="page-body">
+        <main class="main-content">
+    <?php endif; ?>

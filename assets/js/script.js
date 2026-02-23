@@ -1,16 +1,9 @@
 
-function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    sidebar.classList.toggle('open');
-    if (overlay) overlay.classList.toggle('active');
-}
-
-function closeSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    sidebar.classList.remove('open');
-    if (overlay) overlay.classList.remove('active');
+function toggleHeaderMenu() {
+    const menu = document.getElementById('mobileMenu');
+    if (menu) {
+        menu.classList.toggle('active');
+    }
 }
 
 // ---------- Toast Notifications ----------
@@ -151,9 +144,10 @@ function previewImage(input, previewId) {
     }
 }
 
-// ---------- Close sidebar on window resize ----------
+// ---------- Close mobile menu on window resize ----------
 window.addEventListener('resize', function () {
     if (window.innerWidth > 992) {
-        closeSidebar();
+        const menu = document.getElementById('mobileMenu');
+        if (menu) menu.classList.remove('active');
     }
 });
