@@ -37,3 +37,5 @@ Upcoming features include:
 
 ---
 *Handcrafted with passion for the perfect cup.*
+
+need to work on the customer part, add proper error handling, fix sql issue
