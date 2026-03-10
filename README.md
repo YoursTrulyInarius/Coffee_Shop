@@ -23,6 +23,20 @@ An artisanal storefront and management system designed for bespoke coffee busine
   - Pure Vanilla CSS (Glassmorphism, Flexbox/CSS Grid, Advanced Typography)
   - Semantic HTML5
 
+## 🛠️ Getting Started
+
+To set up the project locally:
+
+1.  **Clone the repository** to your local server directory (e.g., `htdocs` for XAMPP).
+2.  **Database Setup**:
+    *   Ensure your MySQL server is running.
+    *   Open your browser and navigate to `http://localhost/Coffee_Shop/setup_database.php`.
+    *   This will automatically create the `coffee_shop` database and all necessary tables.
+3.  **Login**:
+    *   Go to `login.php`.
+    *   Use the default credentials: **admin** / **admin123**.
+    *   *Note: The admin password `admin123` is hardcoded as a fallback, ensuring you can always access the system even after a fresh clone.*
+
 ## 🚀 Roadmap: Next Steps
 
 > [!IMPORTANT]

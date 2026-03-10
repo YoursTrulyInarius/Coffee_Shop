@@ -66,7 +66,20 @@ CREATE TABLE order_items (
 -- INITIAL DATA
 -- =====================
 
--- Default admin user (password: admin123)
+-- Default admin user (username: admin, password: admin123)
 -- Role is set to 'admin'
 INSERT INTO users (username, password, full_name, role) VALUES
 ('admin', '$2y$10$TK.QJJTwzq2MNFL.TirM2O0eoYPahmz6q1vOJyccjx8BRb97MnY1Y.', 'Administrator', 'admin');
+
+-- Sample Categories
+INSERT INTO categories (name) VALUES 
+('Coffee'),
+('Tea'),
+('Pastries');
+
+-- Sample Menu Items
+INSERT INTO menu_items (category_id, name, description, price, available) VALUES
+(1, 'Espresso', 'Strong and pure coffee', 2.50, 1),
+(1, 'Cappuccino', 'Coffee with steamed milk foam', 3.50, 1),
+(2, 'Green Tea', 'Organic green tea', 2.00, 1),
+(3, 'Croissant', 'Buttery flaky pastry', 2.75, 1);
