@@ -35,7 +35,7 @@ $pendingOrders = $result->fetch_assoc()['cnt'];
 
 // Recent orders (last 5)
 $recentOrders = $conn->query("
-    SELECT o.id, o.total_amount, o.status, o.created_at, u.full_name,
+    SELECT o.id, o.total_amount, o.status, o.created_at, u.full_name as cashier_name, o.customer_name,
            (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
     FROM orders o
     LEFT JOIN users u ON o.user_id = u.id
@@ -103,7 +103,17 @@ include 'includes/header.php';
                     <?php while ($order = $recentOrders->fetch_assoc()): ?>
                         <tr>
                             <td><strong>#<?php echo str_pad($order['id'], 4, '0', STR_PAD_LEFT); ?></strong></td>
-                            <td><?php echo $order['full_name'] ? htmlspecialchars($order['full_name']) : '<span class="text-muted">Guest / Unknown</span>'; ?></td>
+                            <td>
+                                <?php 
+                                if (!empty($order['customer_name'])) {
+                                    echo '<strong>' . htmlspecialchars($order['customer_name']) . '</strong> <small class="text-muted">(Customer)</small>';
+                                } elseif (!empty($order['cashier_name'])) {
+                                    echo htmlspecialchars($order['cashier_name']) . ' <small class="text-muted">(Staff)</small>';
+                                } else {
+                                    echo '<span class="text-muted">Unknown</span>';
+                                }
+                                ?>
+                            </td>
                             <td><?php echo $order['item_count']; ?> item(s)</td>
                             <td class="fw-600">₱<?php echo number_format($order['total_amount'], 2); ?></td>
                             <td>

@@ -126,21 +126,26 @@ function previewImage(input, previewId) {
     const preview = document.getElementById(previewId);
     if (!preview) return;
 
+    // Lock the container size with inline styles - immune to any CSS overrides
+    preview.style.cssText = 'width:100% !important; height:200px !important; overflow:hidden !important; position:relative !important; display:flex !important; align-items:center !important; justify-content:center !important; border-radius:12px !important; background:#F7F3F0 !important;';
+
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function (e) {
-            preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            // Image is locked inside the container via inline styles
+            preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width:100%;height:200px;object-fit:cover;display:block;border-radius:10px;flex-shrink:0;">`;
             preview.classList.add('has-image');
         };
         reader.readAsDataURL(input.files[0]);
     } else {
         preview.innerHTML = `
-            <div class="flex flex-col items-center gap-1">
-                <svg class="icon-svg" style="width:48px;height:48px;opacity:0.2;" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                <span>No image selected</span>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;color:#83756C;">
+                <svg style="width:48px;height:48px;opacity:0.2;" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                <span style="font-size:0.85rem;">No image selected</span>
             </div>
         `;
         preview.classList.remove('has-image');
+        preview.style.border = '2px dashed #E5E0DB';
     }
 }
 
@@ -149,5 +154,28 @@ window.addEventListener('resize', function () {
     if (window.innerWidth > 992) {
         const menu = document.getElementById('mobileMenu');
         if (menu) menu.classList.remove('active');
+    }
+});
+
+// ---------- Admin Sidebar Toggle ----------
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const layout = document.querySelector('.admin-layout');
+    
+    if (toggleBtn && layout) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            layout.classList.toggle('sidebar-active');
+        });
+
+        // Close when clicking main content on mobile
+        const main = document.querySelector('.admin-main');
+        if (main) {
+            main.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    layout.classList.remove('sidebar-active');
+                }
+            });
+        }
     }
 });

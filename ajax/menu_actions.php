@@ -1,7 +1,9 @@
 <?php
 ob_start(); // Buffer to prevent whitespace/errors from breaking JSON
 require_once dirname(__FILE__) . '/../config/database.php';
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 
@@ -11,10 +13,17 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 // Allow listing actions for guests (index.php)
 $isPublicAction = ($action === 'list' || $action === 'categories');
 
-if (!$isPublicAction && !isset($_SESSION['user_id'])) {
-    if (ob_get_length()) ob_clean();
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
+if (!$isPublicAction) {
+    if (!isset($_SESSION['user_id'])) {
+        if (ob_get_length()) ob_clean();
+        echo json_encode(['success' => false, 'message' => 'Unauthorized: Please login.']);
+        exit();
+    }
+    if ($_SESSION['role'] !== 'admin') {
+        if (ob_get_length()) ob_clean();
+        echo json_encode(['success' => false, 'message' => 'Unauthorized: Admin access required.']);
+        exit();
+    }
 }
 switch ($action) {
 

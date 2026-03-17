@@ -284,10 +284,13 @@ a {
     background: var(--white);
 }
 
+/* NEW: Enhanced image container */
 .menu-img {
     height: 240px;
+    width: 100%;
     overflow: hidden;
     position: relative;
+    background: var(--dust);
 }
 
 .menu-img img {
@@ -471,6 +474,7 @@ a {
 /* Admin Body Wrapper - used in header.php for admin pages */
 .admin-layout {
     display: flex;
+    width: 100%;
     min-height: 100vh;
     background: var(--paper);
     overflow-x: hidden;
@@ -482,7 +486,7 @@ a {
     height: 100vh;
     background: var(--primary);
     color: var(--white);
-    position: fixed;
+    position: sticky;
     top: 0;
     left: 0;
     z-index: 1000;
@@ -490,6 +494,7 @@ a {
     flex-direction: column;
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
     transition: var(--transition);
+    flex-shrink: 0;
 }
 
 .sidebar-brand {
@@ -595,17 +600,13 @@ a {
 
 /* Admin Main Content Area */
 .admin-main {
-    flex-grow: 1;
-    margin-left: 280px;
-    padding: 40px;
-    width: calc(100% - 280px);
-    /* Explicit width instead of max-width */
-    max-width: 1400px;
-    /* Sensible maximum for ultrawide monitors */
-    margin: 0 auto;
-    /* Center it if it hits max-width */
-    margin-left: 280px;
-    /* Keep left margin for sidebar */
+    flex: 1 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 30px !important;
+    background: var(--paper);
+    margin: 0 !important;
 }
 
 .admin-header {
@@ -613,6 +614,35 @@ a {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 20px;
+}
+
+.admin-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Sidebar Toggle Button (Hidden on Desktop) */
+.sidebar-toggle-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 2000;
+}
+
+.sidebar-toggle-btn span {
+    width: 100%;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 10px;
+    transition: var(--transition);
 }
 
 .admin-header h1 {
@@ -657,9 +687,6 @@ a {
     }
 
     .admin-main {
-        margin-left: 80px;
-        width: calc(100% - 80px);
-        max-width: 100%;
         padding: 30px 20px;
     }
 
@@ -669,13 +696,36 @@ a {
 }
 
 @media (max-width: 768px) {
+    .sidebar-toggle-btn {
+        display: flex;
+    }
+
     .admin-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
         transform: translateX(-100%);
+        z-index: 2000;
+        width: 280px; /* Full width on mobile when open */
+    }
+
+    .admin-layout.sidebar-active .admin-sidebar {
+        transform: translateX(0);
+    }
+
+    .admin-layout.sidebar-active::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1500;
+        backdrop-filter: blur(4px);
     }
 
     .admin-main {
-        margin-left: 0;
-        width: 100%;
         padding: 20px;
     }
 
@@ -1028,10 +1078,12 @@ a {
 
 /* Dashboard Statistics */
 .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 25px;
-    margin-bottom: 40px;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px !important;
+    margin-bottom: 40px !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .stat-card {
@@ -1124,7 +1176,8 @@ a {
     border: 1px solid rgba(0, 0, 0, 0.05);
     overflow: hidden;
     margin-bottom: 30px;
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .card-header {
@@ -1453,17 +1506,85 @@ a {
 
 .modal {
     background: var(--white);
-    padding: 40px;
+    padding: 0;
     border-radius: 32px;
     width: 90%;
     max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
     transform: translateY(20px);
     transition: var(--transition);
     text-align: center;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 30px 40px 20px;
+    flex-shrink: 0;
+}
+
+.modal-body {
+    padding: 0 40px 20px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    flex-grow: 1;
+    text-align: left;
+    max-height: 60vh;
+    scrollbar-width: thin;
+    scrollbar-color: var(--clay) var(--dust);
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: var(--dust);
+    border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--clay);
+    border-radius: 10px;
+}
+
+.modal-footer {
+    padding: 20px 40px 30px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    flex-shrink: 0;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
 }
 
 .modal-overlay.active .modal {
     transform: translateY(0);
+}
+
+/* Image Preview in Modals */
+.image-preview {
+    width: 100%;
+    height: 200px;
+    background: var(--secondary);
+    border: 2px dashed var(--dust);
+    border-radius: 12px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: var(--text-muted);
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-preview.has-image {
+    border: none;
 }
 
 .confirm-body {
@@ -1516,4 +1637,45 @@ a {
         transform: translateX(0);
         opacity: 1;
     }
+}
+
+/* Aggressive Full-Screen Override - Exclude Modals */
+.admin-layout .admin-main, 
+.admin-layout .admin-main > .card, 
+.admin-layout .admin-main > .toolbar, 
+.admin-layout .admin-main > .stats-grid {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Ensure data table also consumes width */
+.admin-layout .table-container, 
+.admin-layout .data-table {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Foolproof Image Preview */
+.image-preview {
+    width: 100%;
+    height: 200px;
+    background: var(--secondary);
+    border: 2px dashed var(--dust);
+    border-radius: 12px;
+    margin-top: 10px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+.image-preview img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important; /* contain is safer than cover for preview */
 }

@@ -73,6 +73,7 @@ include 'includes/header.php';
             <select class="form-control" id="historyStatus" onchange="loadOrderHistory()" style="width: 150px;">
                 <option value="">All Status</option>
                 <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
             </select>
@@ -84,15 +85,17 @@ include 'includes/header.php';
                 <thead>
                     <tr>
                         <th>Order #</th>
+                        <th>Customer</th>
                         <th>Items</th>
                         <th>Total</th>
+                        <th>Payment</th>
                         <th>Status</th>
                         <th>Date</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="orderHistoryBody">
-                    <tr><td colspan="6" class="text-center text-muted" style="padding:40px;">Click "Order History" tab to load</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted" style="padding:40px;">Click "Order History" tab to load</td></tr>
                 </tbody>
             </table>
         </div>
@@ -290,15 +293,24 @@ include 'includes/header.php';
             if (res.success && res.data.length > 0) {
                 tbody.innerHTML = res.data.map(order => `
                     <tr>
-                        <td><strong>#${order.id.toString().padStart(4, '0')}</strong></td>
+                        <td><strong>ORD-${order.id.toString().padStart(4, '0')}</strong></td>
+                        <td>
+                            <div style="font-weight:600">${escapeHtml(order.customer_name || 'Walk-in')}</div>
+                            ${order.contact ? `<div style="font-size:0.75rem;color:var(--text-muted)">${escapeHtml(order.contact)}</div>` : ''}
+                        </td>
                         <td>${order.item_count} item(s)</td>
                         <td class="fw-600">₱${parseFloat(order.total_amount).toFixed(2)}</td>
+                        <td><span style="background:#FEF3C7;color:#92400E;padding:2px 10px;border-radius:50px;font-size:0.72rem;font-weight:700;">COD</span></td>
                         <td><span class="badge badge-${order.status}">${capitalize(order.status)}</span></td>
                         <td>${formatDate(order.created_at)}</td>
                         <td>
                             <div class="action-btns">
                                 <button class="action-btn view" onclick="viewOrder(${order.id})" title="View">👁️</button>
                                 ${order.status === 'pending' ? `
+                                    <button class="action-btn edit" onclick="updateOrderStatus(${order.id}, 'processing')" title="Processing">🔄</button>
+                                    <button class="action-btn delete" onclick="updateOrderStatus(${order.id}, 'cancelled')" title="Cancel">❌</button>
+                                ` : ''}
+                                ${order.status === 'processing' ? `
                                     <button class="action-btn edit" onclick="updateOrderStatus(${order.id}, 'completed')" title="Complete">✅</button>
                                     <button class="action-btn delete" onclick="updateOrderStatus(${order.id}, 'cancelled')" title="Cancel">❌</button>
                                 ` : ''}
@@ -307,7 +319,7 @@ include 'includes/header.php';
                     </tr>
                 `).join('');
             } else {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:40px;">No orders found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="padding:40px;">No orders found.</td></tr>';
             }
         });
     }
@@ -321,14 +333,19 @@ include 'includes/header.php';
 
                 let html = `
                     <div class="flex-between mb-2">
-                        <span class="text-muted">Cashier: <strong>${escapeHtml(order.cashier)}</strong></span>
                         <span class="badge badge-${order.status}">${capitalize(order.status)}</span>
+                        <span style="background:#FEF3C7;color:#92400E;padding:3px 12px;border-radius:50px;font-size:0.75rem;font-weight:700;">💵 Cash on Delivery</span>
                     </div>
-                    <div class="text-muted mb-2" style="font-size:0.82rem;">Date: ${formatDate(order.created_at)}</div>
+                    <div style="background:var(--paper);border-radius:12px;padding:16px;margin-bottom:16px;">
+                        <p style="margin:0 0 6px;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:700;">Delivery Info</p>
+                        <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(order.customer_name || 'N/A')}</p>
+                        <p style="margin:4px 0;"><strong>Address:</strong> ${escapeHtml(order.address || 'N/A')}</p>
+                        <p style="margin:4px 0;"><strong>Contact:</strong> ${escapeHtml(order.contact || 'N/A')}</p>
+                        ${order.notes ? `<p style="margin:4px 0;"><strong>Notes:</strong> ${escapeHtml(order.notes)}</p>` : ''}
+                    </div>
+                    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px;">Date: ${formatDate(order.created_at)}</div>
                     <table class="order-detail-items">
-                        <thead>
-                            <tr><th>Item</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr>
-                        </thead>
+                        <thead><tr><th>Item</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr></thead>
                         <tbody>
                             ${order.items.map(item => `
                                 <tr>
@@ -352,7 +369,13 @@ include 'includes/header.php';
                 if (order.status === 'pending') {
                     footer = `
                         <button class="btn btn-outline btn-sm" onclick="closeModal('orderDetailModal')">Close</button>
-                        <button class="btn btn-success btn-sm" onclick="updateOrderStatus(${order.id}, 'completed'); closeModal('orderDetailModal');">Complete</button>
+                        <button class="btn btn-primary btn-sm" onclick="updateOrderStatus(${order.id}, 'processing'); closeModal('orderDetailModal');">🔄 Mark Processing</button>
+                        <button class="btn btn-danger btn-sm" onclick="updateOrderStatus(${order.id}, 'cancelled'); closeModal('orderDetailModal');">Cancel</button>
+                    `;
+                } else if (order.status === 'processing') {
+                    footer = `
+                        <button class="btn btn-outline btn-sm" onclick="closeModal('orderDetailModal')">Close</button>
+                        <button class="btn btn-success btn-sm" onclick="updateOrderStatus(${order.id}, 'completed'); closeModal('orderDetailModal');">✅ Mark Completed</button>
                         <button class="btn btn-danger btn-sm" onclick="updateOrderStatus(${order.id}, 'cancelled'); closeModal('orderDetailModal');">Cancel</button>
                     `;
                 }

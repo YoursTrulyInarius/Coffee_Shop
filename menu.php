@@ -42,12 +42,12 @@ include 'includes/header.php';
 
 <!-- Menu Item Modal -->
 <div class="modal-overlay" id="menuModal">
-    <div class="modal">
-        <div class="modal-header">
+    <div class="modal" style="padding:0;display:flex;flex-direction:column;max-height:90vh;overflow:hidden;width:90%;max-width:500px;border-radius:32px;background:#fff;">
+        <div class="modal-header" style="padding:30px 40px 20px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;">
             <h3 id="menuModalTitle">Add Menu Item</h3>
             <button class="modal-close" onclick="closeModal('menuModal')">&times;</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="padding:0 40px 20px;overflow-y:scroll;flex-grow:1;max-height:65vh;text-align:left;scrollbar-width:thin;scrollbar-color:#D8A48F #E5E0DB;">
             <form id="menuForm" enctype="multipart/form-data">
                 <input type="hidden" id="itemId" name="id">
                 <input type="hidden" name="action" id="formAction" value="create">
@@ -79,8 +79,8 @@ include 'includes/header.php';
                 <div class="form-group">
                     <label for="itemImage">Image</label>
                     <input type="file" id="itemImage" name="image" class="form-control" accept="image/*" onchange="previewImage(this, 'imagePreview')">
-                    <div class="image-preview" id="imagePreview">
-                        <span>No image selected</span>
+                    <div class="image-preview" id="imagePreview" style="width:100%;height:200px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;border-radius:12px;background:#F7F3F0;border:2px dashed #E5E0DB;margin-top:10px;">
+                        <span style="color:#83756C;font-size:0.85rem;">No image selected</span>
                     </div>
                 </div>
 
@@ -93,26 +93,25 @@ include 'includes/header.php';
                 </div>
             </form>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer" style="padding:20px 40px 30px;border-top:1px solid rgba(0,0,0,0.05);flex-shrink:0;display:flex;gap:15px;justify-content:center;">
             <button class="btn btn-outline btn-sm" onclick="closeModal('menuModal')">Cancel</button>
             <button class="btn btn-complement btn-sm" onclick="saveMenuItem()">Save Item</button>
         </div>
     </div>
-</div>
 
 <script>
-    // Load categories for filter, form, and management list
-    const hardcodedCategories = ['Hot Coffee', 'Iced Coffee', 'Pastries', 'Sandwiches', 'Tea', 'Snacks'];
-    let allCategoryNames = [...hardcodedCategories]; // Start with defaults
+    let defaultCategories = ['Ice Coffee', 'Hot Coffee', 'Snacks', 'Others'];
+    let allCategoryNames = [...defaultCategories]; // Start with defaults
     
     function loadCategories() {
-        // Render defaults immediately
+        // Render current set immediately
         renderCategoryDropdown(allCategoryNames);
         
         ajaxRequest('ajax/menu_actions.php', { action: 'categories' }, function(res) {
             if (res.success) {
                 const dbCategories = res.data.map(cat => cat.name);
-                allCategoryNames = [...new Set([...hardcodedCategories, ...dbCategories])].sort();
+                // Combine defaults with DB categories, ensuring uniqueness
+                allCategoryNames = [...new Set([...defaultCategories, ...dbCategories])];
                 renderCategoryDropdown(allCategoryNames);
             }
         });

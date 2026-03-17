@@ -7,7 +7,6 @@ $isAdminPage = in_array($currentPage, $adminPages);
 
 <?php if ($isAdminPage): ?>
             </main><!-- /.admin-main -->
-        </div><!-- /.admin-layout -->
 <?php else: ?>
         </main><!-- /.main-content -->
 <?php endif; ?>

@@ -34,10 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         
-        // Hardcoded admin password fallback for reliability across clones
-        $is_hardcoded_admin = ($username === 'admin' && $password === 'admin123');
-        
-        if ($is_hardcoded_admin || password_verify($password, $user['password'])) {
+        if (password_verify($password, $user['password'])) {
             $_SESSION['user_id']   = $user['id'];
             $_SESSION['username']  = $user['username'];
             $_SESSION['full_name'] = $user['full_name'];

@@ -4,9 +4,9 @@ $conn = getConnection();
 
 $categoryId = $_GET['category_id'] ?? 'all';
 
-$sql = "SELECT m.*, c.name as category_name 
+$sql = "SELECT m.*, IFNULL(c.name, 'Uncategorized') as category_name 
         FROM menu_items m 
-        JOIN categories c ON m.category_id = c.id 
+        LEFT JOIN categories c ON m.category_id = c.id 
         WHERE m.available = 1";
 
 if ($categoryId !== 'all') {
@@ -18,18 +18,26 @@ $result = $conn->query($sql);
 
 if ($result && $result->num_rows > 0) {
     while ($item = $result->fetch_assoc()) {
-        $imagePath = !empty($item['image']) ? 'uploads/' . $item['image'] : 'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=800';
+        $imagePath = !empty($item['image'])
+            ? 'uploads/' . $item['image']
+            : 'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=800';
+        $priceFormatted = number_format($item['price'], 2);
+        $nameEsc        = htmlspecialchars($item['name'], ENT_QUOTES);
         ?>
         <div class="menu-card">
             <div class="menu-img">
-                <img src="<?php echo $imagePath; ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" loading="lazy">
+                <img src="<?php echo $imagePath; ?>" alt="<?php echo $nameEsc; ?>" loading="lazy">
             </div>
             <div class="menu-info">
                 <h3><?php echo htmlspecialchars($item['name']); ?></h3>
-                <p><?php echo htmlspecialchars($item['description']); ?></p>
+                <p><?php echo htmlspecialchars($item['description'] ?? ''); ?></p>
                 <div class="menu-footer">
-                    <span class="price">₱<?php echo number_format($item['price'], 2); ?></span>
-                    <button class="btn-add">Order Craft</button>
+                    <span class="price">₱<?php echo $priceFormatted; ?></span>
+                    <button class="btn-add"
+                        id="add-btn-<?php echo $item['id']; ?>"
+                        onclick="addToCart(<?php echo $item['id']; ?>, '<?php echo $nameEsc; ?>', <?php echo $item['price']; ?>)">
+                        + Add
+                    </button>
                 </div>
             </div>
         </div>

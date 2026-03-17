@@ -1,53 +1,139 @@
 # ☕ Coffee Shop Management System
 
-An artisanal storefront and management system designed for bespoke coffee businesses. This system focuses on high-fidelity user experiences and streamlines inventory and order management.
+An artisanal storefront and management system designed for bespoke coffee businesses. This system focuses on high-fidelity user experiences and streamlines inventory and order management with a specialized focus on Cash on Delivery (COD) services.
 
-> [!CAUTION]
-> **🚨 ACTIVE PRODUCTION LAUNCH 🚨**
-> **This system is currently in active production!** Features are being rapidly iterated upon and deployed live to ensure the highest quality "Earth & Clay" Bespoke Brand experience.
+---
 
-## 🌟 Recent Fixes & UI Polish (V9.2)
+## 🏗️ System Architecture
 
-- **Order Cart Redesign**: Completely overhauled the cart internals. Fixed broken HTML structures and implemented a sleek, shadow-lifted layout with refined typography and perfectly aligned quantity controls.
-- **Floating Search UI**: Upgraded all bland, boxy search bars into premium, pill-shaped floating inputs with soft focus rings and crisp SVG iconography (replacing old emojis).
-- **Responsive Grid Stabilization**: Locked in the `.admin-main` container widths and repaired CSS media queries. The dashboard statistics, sales summaries, and complex order layouts now collapse cleanly and beautifully on tablets and mobile devices.
-- **Component Restoration**: Restored missing CSS rules for the secondary toolbar, navigational tabs, and the newly implemented Sales Summary cards.
-- **Layout Spacing**: Fixed unbalanced spacing issues across the admin interfaces (e.g., maximizing the distance between Search and Action buttons in the toolbar).
+The system follows a classic LAMP stack pattern with a focus on real-time asynchronous interactions.
 
-## 🛠️ Technical Stack
+```mermaid
+graph TD
+    Client[Browser / User] <--> Server[PHP Backend]
+    Server <--> DB[(MySQL Database)]
+    Client -- AJAX/Fetch API --> Server
+    Server -- mysqli --> DB
+    style Client fill:#f9f,stroke:#333,stroke-width:2px
+    style Server fill:#bbf,stroke:#333,stroke-width:2px
+    style DB fill:#dfd,stroke:#333,stroke-width:2px
+```
 
-- **Backend**: PHP (XAMPP Environment)
-- **Database**: MySQL (mysqli)
-- **Frontend Architecture**: 
-  - Vanilla JavaScript (Custom AJAX helpers & dynamic DOM rendering)
-  - Pure Vanilla CSS (Glassmorphism, Flexbox/CSS Grid, Advanced Typography)
-  - Semantic HTML5
+---
+
+## 🌟 Key Features
+
+### 🛒 Customer Multi-Item Cart
+- **Floating Cart Bar**: A real-time summary of the current order at the bottom of the screen.
+- **Dynamic Quantity Control**: Customers can add/remove items and adjust quantities directly from the menu or cart preview.
+- **Auth Gate**: Seamless registration and login flow integrated into the checkout process.
+
+### 🛍️ Secure Checkout (COD)
+- **Delivery Management**: Captures Full Name, Address, and Contact Number.
+- **Input Validation**: Contact numbers are restricted to numerical input with an 11-digit limit.
+- **COD Exclusivity**: Designed specifically for regional Cash on Delivery business models.
+
+### 📊 Admin Orchestration
+- **Order Lifecycle**: 3-stage status management (`Pending` → `Processing` → `Completed`).
+- **Real-Time Dash**: Immediate visibility into customer details and delivery requirements.
+- **Sales Analytics**: Daily revenue tracking based on completed order history.
+
+---
+
+## 📊 Database Relations (ERD)
+
+The database consists of 5 core tables managing users, inventory, and sales.
+
+```mermaid
+erDiagram
+    USERS ||--o{ ORDERS : places
+    CATEGORIES ||--|{ MENU_ITEMS : contains
+    ORDERS ||--|{ ORDER_ITEMS : includes
+    MENU_ITEMS ||--o{ ORDER_ITEMS : "sold as"
+
+    USERS {
+        int id PK
+        string username
+        string password
+        string full_name
+        enum role "admin, customer"
+        timestamp created_at
+    }
+
+    CATEGORIES {
+        int id PK
+        string name
+    }
+
+    MENU_ITEMS {
+        int id PK
+        int category_id FK
+        string name
+        text description
+        decimal price
+        string image
+        bool available
+    }
+
+    ORDERS {
+        int id PK
+        int user_id FK
+        string customer_name
+        text address
+        string contact
+        enum status "pending, processing, completed, cancelled"
+        decimal total_amount
+        timestamp created_at
+    }
+
+    ORDER_ITEMS {
+        int id PK
+        int order_id FK
+        int menu_item_id FK
+        int quantity
+        decimal price
+        decimal subtotal
+    }
+```
+
+---
+
+## 🔄 Order Lifecycle Flowchart
+
+```mermaid
+sequenceDiagram
+    participant C as Customer
+    participant S as System (Cart)
+    participant A as Admin Dashboard
+
+    C->>S: Adds items to cart
+    C->>S: Clicks Checkout
+    S-->>C: Prompt Login/Register (if guest)
+    C->>S: Provides Delivery Info
+    S->>A: Order appears (Status: Pending)
+    A->>A: Process Order (Status: Processing)
+    A->>A: Deliver & Collect (Status: Completed)
+    S-->>C: Order History Updated
+```
+
+---
 
 ## 🛠️ Getting Started
 
-To set up the project locally:
+### Prerequisites
+- XAMPP / WAMP / LAMP environment.
+- PHP 7.4+ and MySQL.
 
-1.  **Clone the repository** to your local server directory (e.g., `htdocs` for XAMPP).
-2.  **Database Setup**:
-    *   Ensure your MySQL server is running.
-    *   Open your browser and navigate to `http://localhost/Coffee_Shop/setup_database.php`.
-    *   This will automatically create the `coffee_shop` database and all necessary tables.
-3.  **Login**:
-    *   Go to `login.php`.
-    *   Use the default credentials: **admin** / **admin123**.
-    *   *Note: The admin password `admin123` is hardcoded as a fallback, ensuring you can always access the system even after a fresh clone.*
-
-## 🚀 Roadmap: Next Steps
-
-> [!IMPORTANT]
-> **🔜 THE NEXT MAJOR STEP: THE "CUSTOMERS" MODULE 🔜**
-> Our immediate incoming focus is the development of a fully realized **Customers** management and engagement system!
-
-Upcoming features include:
-- **Customer Accounts**: Secure registration, login, and profile management for patrons.
-- **Loyalty Program**: Digital "Coffee Stamps" and tiered rewards integration.
-- **Bespoke Personalization**: Saved preferences, "Favorite Brews" history, and fast-reorder capabilities.
-- **Order Tracking**: Real-time status updates for customers to track their brew from barista to hand.
+### Installation
+1.  **Clone** this repository to your server's web root.
+2.  **Database Configuration**:
+    - Create a database named `coffee_shop`.
+    - Import `coffee_shop_db.sql` found in the root directory.
+    - Configuration is handled in `config/database.php`.
+3.  **Access Management**:
+    - **Guest/Customer**: Access `index.php` to browse and order.
+    - **Admin**: Login via `login.php` with credentials: **admin** / **admin123**.
 
 ---
+
 *Handcrafted with passion for the perfect cup.*

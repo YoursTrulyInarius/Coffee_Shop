@@ -63,7 +63,14 @@ $isAdminPage = in_array($currentPage, $adminPages);
 
         <main class="admin-main">
             <header class="admin-header">
-                <h1><?php echo $pageTitle ?? 'Management'; ?></h1>
+                <div class="header-left">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <h1><?php echo $pageTitle ?? 'Management'; ?></h1>
+                </div>
                 <div class="admin-actions">
                     <!-- Placeholder for top-bar actions -->
                 </div>
