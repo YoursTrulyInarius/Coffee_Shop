@@ -136,4 +136,3 @@ sequenceDiagram
 
 ---
 
-*Handcrafted with passion for the perfect cup.*
