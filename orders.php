@@ -38,26 +38,32 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <!-- Cart Panel -->
-        <div class="cart-panel">
-            <div class="cart-header">
-                <h3>🧾 Current Order</h3>
+        <!-- Customer Orders Panel -->
+        <div class="cart-panel" style="display:flex;flex-direction:column;gap:0;">
+            <div class="cart-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <h3>📋 Customer Orders</h3>
+                <button onclick="loadCustomerOrders()" title="Refresh" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted);padding:4px 8px;border-radius:8px;transition:background 0.2s;" onmouseover="this.style.background='var(--paper)'" onmouseout="this.style.background='none'">🔄</button>
             </div>
-            <div class="cart-items" id="cartItems">
-                <div class="cart-empty">
-                    <div class="empty-icon">🛒</div>
-                    <p>Cart is empty</p>
-                    <p style="font-size: 0.78rem; margin-top: 4px;">Click on items to add them</p>
+
+            <!-- Summary Bar -->
+            <div style="display:flex;gap:12px;padding:12px 16px;background:var(--paper);border-bottom:1px solid rgba(0,0,0,0.06);flex-shrink:0;">
+                <div style="flex:1;text-align:center;">
+                    <div id="coSummaryQty" style="font-size:1.4rem;font-weight:800;color:var(--primary);">0</div>
+                    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Total Items</div>
+                </div>
+                <div style="width:1px;background:rgba(0,0,0,0.08);"></div>
+                <div style="flex:1;text-align:center;">
+                    <div id="coSummaryAmount" style="font-size:1.4rem;font-weight:800;color:var(--accent);">₱0.00</div>
+                    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Total Value</div>
                 </div>
             </div>
-            <div class="cart-footer">
-                <div class="cart-total">
-                    <span>Total</span>
-                    <span id="cartTotal">₱0.00</span>
+
+            <!-- Orders List -->
+            <div id="customerOrdersList" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;">
+                <div style="text-align:center;padding:40px 0;color:var(--text-muted);">
+                    <div style="font-size:2rem;margin-bottom:8px;">📋</div>
+                    <p>Loading orders...</p>
                 </div>
-                <button class="btn btn-complement w-100" onclick="placeOrder()" id="placeOrderBtn" disabled>
-                    Place Order
-                </button>
             </div>
         </div>
     </div>
@@ -119,6 +125,79 @@ include 'includes/header.php';
 <script>
     // ---- Cart State ----
     let cart = [];
+    let customerOrdersRefreshTimer = null;
+
+    // ---- Customer Orders Panel ----
+    function loadCustomerOrders() {
+        ajaxRequest('ajax/order_actions.php', { action: 'list', status: '' }, function(res) {
+            const list = document.getElementById('customerOrdersList');
+            const summaryQty = document.getElementById('coSummaryQty');
+            const summaryAmt = document.getElementById('coSummaryAmount');
+
+            if (!res.success || !res.data || res.data.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align:center;padding:40px 0;color:var(--text-muted);">
+                        <div style="font-size:2rem;margin-bottom:8px;">🛒</div>
+                        <p>No customer orders yet.</p>
+                    </div>`;
+                summaryQty.textContent = '0';
+                summaryAmt.textContent = '₱0.00';
+                return;
+            }
+
+            // Only show customer orders (those with customer_name set)
+            const customerOrders = res.data.filter(o => o.customer_name && o.customer_name.trim() !== '');
+
+            let totalQty = 0, totalAmt = 0;
+            customerOrders.forEach(o => {
+                totalQty += parseInt(o.item_count || 0);
+                totalAmt += parseFloat(o.total_amount || 0);
+            });
+
+            summaryQty.textContent = totalQty;
+            summaryAmt.textContent = '₱' + totalAmt.toFixed(2);
+
+            const statusColors = {
+                pending:    { bg: '#FEF3C7', color: '#92400E' },
+                processing: { bg: '#DBEAFE', color: '#1E40AF' },
+                completed:  { bg: '#D1FAE5', color: '#065F46' },
+                cancelled:  { bg: '#FEE2E2', color: '#991B1B' }
+            };
+
+            if (customerOrders.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align:center;padding:40px 0;color:var(--text-muted);">
+                        <div style="font-size:2rem;margin-bottom:8px;">🛒</div>
+                        <p>No customer orders yet.</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = customerOrders.map(order => {
+                const sc = statusColors[order.status] || { bg: '#F3F4F6', color: '#374151' };
+                return `
+                <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:14px 16px;cursor:pointer;transition:box-shadow 0.2s;" onclick="viewOrder(${order.id})" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.10)'" onmouseout="this.style.boxShadow='none'">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;color:var(--primary);font-size:0.9rem;">${escapeHtml(order.customer_name)}</div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">ORD-${order.id.toString().padStart(4,'0')} · ${formatDate(order.created_at)}</div>
+                        </div>
+                        <span style="background:${sc.bg};color:${sc.color};padding:3px 10px;border-radius:50px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;">${order.status}</span>
+                    </div>
+                    <div style="display:flex;gap:16px;margin-top:6px;">
+                        <div style="display:flex;align-items:center;gap:5px;">
+                            <span style="font-size:0.78rem;color:var(--text-muted);">🛒</span>
+                            <span style="font-size:0.82rem;font-weight:600;color:var(--primary);">${order.item_count} item${order.item_count != 1 ? 's' : ''}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:5px;">
+                            <span style="font-size:0.78rem;color:var(--text-muted);">💰</span>
+                            <span style="font-size:0.9rem;font-weight:800;color:var(--accent);">₱${parseFloat(order.total_amount).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        });
+    }
 
     // Emoji map for categories
     const categoryEmojis = {
@@ -425,6 +504,9 @@ include 'includes/header.php';
     // Init
     loadOrderCategories();
     loadOrderMenu();
+    loadCustomerOrders();
+    // Auto-refresh customer orders every 15 seconds
+    customerOrdersRefreshTimer = setInterval(loadCustomerOrders, 15000);
 </script>
 
 <?php include 'includes/footer.php'; ?>

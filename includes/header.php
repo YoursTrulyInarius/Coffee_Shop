@@ -95,7 +95,7 @@ $isAdminPage = in_array($currentPage, $adminPages);
                 </nav>
 
                 <div class="header-right">
-                    <?php if ($isLoggedIn): ?>
+                    <?php if ($isLoggedIn && $userRole === 'admin'): ?>
                         <div class="user-dropdown">
                             <div class="user-trigger">
                                 <span class="user-name-small"><?php echo htmlspecialchars($fullName); ?></span>

@@ -2,13 +2,10 @@
 session_start();
 require_once 'includes/auth_check.php';
 
-// If already logged in, redirect based on role
-if (isset($_SESSION['user_id'])) {
-    if ($_SESSION['role'] === 'admin') {
-        header("Location: admin_dashboard.php");
-    } else {
-        header("Location: index.php");
-    }
+// If already logged in as admin, redirect to dashboard
+// Customers are allowed to visit login.php (for staff login)
+if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin') {
+    header("Location: admin_dashboard.php");
     exit();
 }
 
