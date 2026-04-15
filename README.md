@@ -134,6 +134,6 @@ sequenceDiagram
     - **Guest/Customer**: Access `index.php` to browse and order.
     - **Admin**: Login via `login.php` with credentials: **admin** / **admin123**.
 
----
+---a
 
 
