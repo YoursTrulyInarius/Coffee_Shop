@@ -1,139 +1,99 @@
-# ☕ Coffee Shop Management System
+# 💳 PayMongo Test API Documentation
 
-An artisanal storefront and management system designed for bespoke coffee businesses. This system focuses on high-fidelity user experiences and streamlines inventory and order management with a specialized focus on Cash on Delivery (COD) services.
+This document contains all the code and configurations related to the PayMongo Payment Gateway integration for the Coffee Shop system.
 
----
+## 1. Configuration (API Keys)
+This file stores your secret and public keys. The `sk_test` prefix is what enables the "Authorized Test API" simulation.
 
-## 🏗️ System Architecture
+**File:** `config/paymongo.php`
+```php
+<?php
+// PayMongo API Configuration
+define('PAYMONGO_SECRET_KEY', 'sk_test_YOUR_SECRET_KEY_HERE');
+define('PAYMONGO_PUBLIC_KEY', 'pk_test_YOUR_PUBLIC_KEY_HERE');
 
-The system follows a classic LAMP stack pattern with a focus on real-time asynchronous interactions.
+// Helper function to call PayMongo API
+function callPayMongo($endpoint, $method = 'POST', $data = null) {
+    $url = "https://api.paymongo.com/v1/" . $endpoint;
+    $ch = curl_init();
 
-```mermaid
-graph TD
-    Client[Browser / User] <--> Server[PHP Backend]
-    Server <--> DB[(MySQL Database)]
-    Client -- AJAX/Fetch API --> Server
-    Server -- mysqli --> DB
-    style Client fill:#f9f,stroke:#333,stroke-width:2px
-    style Server fill:#bbf,stroke:#333,stroke-width:2px
-    style DB fill:#dfd,stroke:#333,stroke-width:2px
+    $headers = [
+        'Content-Type: application/json',
+        'Accept: application/json',
+        'Authorization: Basic ' . base64_encode(PAYMONGO_SECRET_KEY . ':')
+    ];
+
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    
+    if ($method === 'POST') {
+        curl_setopt($ch, CURLOPT_POST, true);
+        if ($data) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['data' => ['attributes' => $data]]));
+        }
+    }
+
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) {
+        return ['error' => $error];
+    }
+
+    return json_decode($response, true);
+}
+?>
 ```
 
----
+## 2. Backend Integration (Checkout Session)
+This code handles the creation of a payment session and returns the checkout URL to the customer.
 
-## 🌟 Key Features
+**File:** `ajax/order_actions.php` (Payment Section)
+```php
+// Create PayMongo Checkout Session
+$sessionData = [
+    'payment_method_types' => ['gcash', 'paymaya', 'grab_pay'],
+    'line_items' => $lineItems,
+    'send_email_receipt' => false,
+    'show_description' => true,
+    'description' => "Order #$orderId from Yours Truly Coffee Shop",
+    'success_url' => "http://localhost/Coffee_Shop/index.php?payment=success&order_id=$orderId",
+    'cancel_url'  => "http://localhost/Coffee_Shop/index.php?payment=cancelled&order_id=$orderId",
+];
 
-### 🛒 Customer Multi-Item Cart
-- **Floating Cart Bar**: A real-time summary of the current order at the bottom of the screen.
-- **Dynamic Quantity Control**: Customers can add/remove items and adjust quantities directly from the menu or cart preview.
-- **Auth Gate**: Seamless registration and login flow integrated into the checkout process.
+$sessionResponse = callPayMongo('checkout_sessions', 'POST', $sessionData);
 
-### 🛍️ Secure Checkout (COD)
-- **Delivery Management**: Captures Full Name, Address, and Contact Number.
-- **Input Validation**: Contact numbers are restricted to numerical input with an 11-digit limit.
-- **COD Exclusivity**: Designed specifically for regional Cash on Delivery business models.
-
-### 📊 Admin Orchestration
-- **Order Lifecycle**: 3-stage status management (`Pending` → `Processing` → `Completed`).
-- **Real-Time Dash**: Immediate visibility into customer details and delivery requirements.
-- **Sales Analytics**: Daily revenue tracking based on completed order history.
-
----
-
-## 📊 Database Relations (ERD)
-
-The database consists of 5 core tables managing users, inventory, and sales.
-
-```mermaid
-erDiagram
-    USERS ||--o{ ORDERS : places
-    CATEGORIES ||--|{ MENU_ITEMS : contains
-    ORDERS ||--|{ ORDER_ITEMS : includes
-    MENU_ITEMS ||--o{ ORDER_ITEMS : "sold as"
-
-    USERS {
-        int id PK
-        string username
-        string password
-        string full_name
-        enum role "admin, customer"
-        timestamp created_at
-    }
-
-    CATEGORIES {
-        int id PK
-        string name
-    }
-
-    MENU_ITEMS {
-        int id PK
-        int category_id FK
-        string name
-        text description
-        decimal price
-        string image
-        bool available
-    }
-
-    ORDERS {
-        int id PK
-        int user_id FK
-        string customer_name
-        text address
-        string contact
-        enum status "pending, processing, completed, cancelled"
-        decimal total_amount
-        timestamp created_at
-    }
-
-    ORDER_ITEMS {
-        int id PK
-        int order_id FK
-        int menu_item_id FK
-        int quantity
-        decimal price
-        decimal subtotal
-    }
+if (isset($sessionResponse['data']['attributes']['checkout_url'])) {
+    $checkoutUrl = $sessionResponse['data']['attributes']['checkout_url'];
+    // ... logic to redirect user to $checkoutUrl
+}
 ```
 
----
+## 3. Payment Verification
+This script checks if a payment was actually completed by querying the PayMongo session ID.
 
-## 🔄 Order Lifecycle Flowchart
+**File:** `ajax/order_actions.php` (Verify Section)
+```php
+case 'verify_payment':
+    $orderId = intval($_POST['order_id'] ?? 0);
+    // ... fetch order from DB
+    
+    require_once '../config/paymongo.php';
+    $sessionResponse = callPayMongo("checkout_sessions/" . $order['payment_session_id'], 'GET');
 
-```mermaid
-sequenceDiagram
-    participant C as Customer
-    participant S as System (Cart)
-    participant A as Admin Dashboard
-
-    C->>S: Adds items to cart
-    C->>S: Clicks Checkout
-    S-->>C: Prompt Login/Register (if guest)
-    C->>S: Provides Delivery Info
-    S->>A: Order appears (Status: Pending)
-    A->>A: Process Order (Status: Processing)
-    A->>A: Deliver & Collect (Status: Completed)
-    S-->>C: Order History Updated
+    if (isset($sessionResponse['data']['attributes']['status'])) {
+        $pmStatus = $sessionResponse['data']['attributes']['status'];
+        
+        if ($pmStatus === 'paid') {
+            // Update order to 'is_paid = 1'
+        }
+    }
+    break;
 ```
 
----
+## ⚠️ Important Note: The "Authorize" Button
+The **"Authorize Test Payment"** button that you see when testing is **not in this code**. It is part of the external PayMongo checkout page. 
 
-## 🛠️ Getting Started
-
-### Prerequisites
-- XAMPP / WAMP / LAMP environment.
-- PHP 7.4+ and MySQL.
-
-### Installation
-1.  **Clone** this repository to your server's web root.
-2.  **Database Configuration**:
-    - Create a database named `coffee_shop`.
-    - Import `coffee_shop_db.sql` found in the root directory.
-    - Configuration is handled in `config/database.php`.
-3.  **Access Management**:
-    - **Guest/Customer**: Access `index.php` to browse and order.
-    - **Admin**: Login via `login.php` with credentials: **admin** / **admin123**.
-
----
-
-
+As long as your `PAYMONGO_SECRET_KEY` starts with `sk_test_`, PayMongo will automatically show that button to help you test your integration without using real money.
