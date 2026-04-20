@@ -1,99 +1,83 @@
-# 💳 PayMongo Test API Documentation
+# Customer Portal Overview & Features
 
-This document contains all the code and configurations related to the PayMongo Payment Gateway integration for the Coffee Shop system.
+This document explains the technical architecture, features, and configuration of the newly implemented **Customer Dashboard** for the Yours Truly Coffee Shop management system. 
 
-## 1. Configuration (API Keys)
-This file stores your secret and public keys. The `sk_test` prefix is what enables the "Authorized Test API" simulation.
+This dashboard transforms the static ordering system into a highly personalized, interactive portal where registered customers can manage their orders seamlessly.
 
-**File:** `config/paymongo.php`
-```php
-<?php
-// PayMongo API Configuration
-define('PAYMONGO_SECRET_KEY', 'sk_test_YOUR_SECRET_KEY_HERE');
-define('PAYMONGO_PUBLIC_KEY', 'pk_test_YOUR_PUBLIC_KEY_HERE');
+---
 
-// Helper function to call PayMongo API
-function callPayMongo($endpoint, $method = 'POST', $data = null) {
-    $url = "https://api.paymongo.com/v1/" . $endpoint;
-    $ch = curl_init();
+## 1. The Customer Dashboard Experience
 
-    $headers = [
-        'Content-Type: application/json',
-        'Accept: application/json',
-        'Authorization: Basic ' . base64_encode(PAYMONGO_SECRET_KEY . ':')
-    ];
+When a customer creates an account or logs in, they are redirected to their specialized portal (`customer_dashboard.php`). This dashboard replaces the public storefront for registered users, giving them a premium, dedicated interface.
 
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    
-    if ($method === 'POST') {
-        curl_setopt($ch, CURLOPT_POST, true);
-        if ($data) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['data' => ['attributes' => $data]]));
-        }
-    }
+### Key Features:
+- **Member Pricing & Menu Access:** Customers can browse a streamlined version of the menu directly from their dashboard.
+- **Floating Cart System:** An intuitive, unified cart interface persists across the screen, allowing users to bundle their items before checking out.
+- **Detailed History Logging:** Users can view a full history of their past purchases and total amount spent inside their account.
 
-    $response = curl_exec($ch);
-    $error = curl_error($ch);
-    curl_close($ch);
+---
 
-    if ($error) {
-        return ['error' => $error];
-    }
+## 2. Dynamic Delivery Zones & Smart ETA Integration
 
-    return json_decode($response, true);
-}
-?>
-```
+The platform no longer relies on arbitrary delivery addresses. It features verified delivery location configuration restricted to **Pagadian City**.
 
-## 2. Backend Integration (Checkout Session)
-This code handles the creation of a payment session and returns the checkout URL to the customer.
+### Configuration via JSON
+The list of available barangays and their delivery zones are natively stored in a configuration file rather than hardcoded in the database or JavaScript.
+- **File Location:** `assets/data/pagadian_barangays.json`
+- **How to Update:** To add or remove delivery zones, simply modify this JSON file. The frontend automatically fetches this list upon loading the dashboard or checkout window.
 
-**File:** `ajax/order_actions.php` (Payment Section)
-```php
-// Create PayMongo Checkout Session
-$sessionData = [
-    'payment_method_types' => ['gcash', 'paymaya', 'grab_pay'],
-    'line_items' => $lineItems,
-    'send_email_receipt' => false,
-    'show_description' => true,
-    'description' => "Order #$orderId from Yours Truly Coffee Shop",
-    'success_url' => "http://localhost/Coffee_Shop/index.php?payment=success&order_id=$orderId",
-    'cancel_url'  => "http://localhost/Coffee_Shop/index.php?payment=cancelled&order_id=$orderId",
-];
+### Smart ETA Logic
+The application automatically computes estimated delivery times based on the customer's selected geographical zone:
+- **Near Zone:** 20–30 Minutes
+- **Standard Zone:** 30–45 Minutes
+- **Distant Zone:** 45–60 Minutes
 
-$sessionResponse = callPayMongo('checkout_sessions', 'POST', $sessionData);
+The generated ETA is dynamically broadcasted on the frontend checkout screen and pushed to the backend `estimated_minutes` database schema when placing an order.
 
-if (isset($sessionResponse['data']['attributes']['checkout_url'])) {
-    $checkoutUrl = $sessionResponse['data']['attributes']['checkout_url'];
-    // ... logic to redirect user to $checkoutUrl
-}
-```
+---
 
-## 3. Payment Verification
-This script checks if a payment was actually completed by querying the PayMongo session ID.
+## 3. Real-Time Order Tracking
 
-**File:** `ajax/order_actions.php` (Verify Section)
-```php
-case 'verify_payment':
-    $orderId = intval($_POST['order_id'] ?? 0);
-    // ... fetch order from DB
-    
-    require_once '../config/paymongo.php';
-    $sessionResponse = callPayMongo("checkout_sessions/" . $order['payment_session_id'], 'GET');
+Customers can track their coffee order live as the admin fulfills it through the admin portal.
 
-    if (isset($sessionResponse['data']['attributes']['status'])) {
-        $pmStatus = $sessionResponse['data']['attributes']['status'];
-        
-        if ($pmStatus === 'paid') {
-            // Update order to 'is_paid = 1'
-        }
-    }
-    break;
-```
+### The Lifecycle States
+The system utilizes server-to-server AJAX polling to continuously map the backend order status directly to the customer's UI:
+1. **Pending/Processing:** Order received and backend fulfillment has begun. Admin updates this via `admin_dashboard.php`.
+2. **Completed:** Rider is dispatched or delivery has successfully finalized.
+3. **Refund Requested:** User escalated a refund payload.
+4. **Cancelled/Refunded:** Securely rejected or reimbursed orders.
 
-## ⚠️ Important Note: The "Authorize" Button
-The **"Authorize Test Payment"** button that you see when testing is **not in this code**. It is part of the external PayMongo checkout page. 
+### No Re-rendering Need
+The customer dashboard utilizes `setInterval()` logic to passively ping `ajax/order_actions.php` and refresh the dashboard data seamlessly in the background without needing to refresh the page.
 
-As long as your `PAYMONGO_SECRET_KEY` starts with `sk_test_`, PayMongo will automatically show that button to help you test your integration without using real money.
+---
+
+## 4. Accelerated Checkout (PayMongo & Cash on Delivery)
+
+When a customer checks out, the backend instantly calculates limits and redirects them securely.
+
+### Cash On Delivery Restrictions
+> [!IMPORTANT]
+> **₱200 Minimum Limit:** Cash on Delivery (COD) is strictly restricted to orders totaling ₱200 or above.
+
+This minimum balance order logic is dynamically established in JavaScript to prevent low-value orders from wasting rider trips:
+- If an order is strictly under **₱200**, the "Cash on Delivery" option is greyed out and visually locked gracefully. The system will forcefully default to Secure E-Wallet.
+
+### E-Wallet (PayMongo Integration)
+- If the customer picks **E-wallet**, the server creates a PayMongo checkout session utilizing `callPayMongo()` configured inside `config/paymongo.php`.
+- The frontend triggers a loading modal wrapper containing the secure PayMongo payment iframe.
+- **Smart Polling Mechanism:** The browser will continually ping the local server to verify if PayMongo has confirmed the payload. Once the backend gets the `paid` status, the frontend auto-detects it, removes the iframe seamlessly, clears the user's cart cache, and refreshes their history interface cleanly showing the new order.
+
+---
+
+## 5. Automated Refunds Functionality
+
+Customers are granted autonomy to initiate refund requests if there is a severe delay or an issue natively from their active orders.
+
+1. **Initiating:** The customer clicks the "Request Refund" red button directly on their active order widget.
+2. **Secure Validation:** SweetAlert prompts a final warning. If confirmed, an AJAX payload signals `action: request_refund` and binds it to the unique `order_id`.
+3. **Database Escrow:** The order `status` schema safely transits from `pending/processing` to `refund_requested`. 
+4. **Admin Approval:** The Administrator sees the visual "Refund Requested" flag in the backend portal and has the power and authority to resolve the financial dispute fully. 
+
+---
+_Documentation automatically generated to outline the V9 Architectural Updates._
