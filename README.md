@@ -80,5 +80,5 @@ Customers are granted autonomy to initiate refund requests if there is a severe 
 4. **Admin Approval:** The Administrator sees the visual "Refund Requested" flag in the backend portal and has the power and authority to resolve the financial dispute fully. 
 
 ---
-_Documentation automatically generated to outline the V9 Architectural Updates.
+_Documentation automatically generated to outline the V9 Architectural Updates._
 
