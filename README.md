@@ -78,7 +78,7 @@ Customers are granted autonomy to initiate refund requests if there is a severe 
 2. **Secure Validation:** SweetAlert prompts a final warning. If confirmed, an AJAX payload signals `action: request_refund` and binds it to the unique `order_id`.
 3. **Database Escrow:** The order `status` schema safely transits from `pending/processing` to `refund_requested`. 
 4. **Admin Approval:** The Administrator sees the visual "Refund Requested" flag in the backend portal and has the power and authority to resolve the financial dispute fully. 
-;;
+
 ---
 _Documentation automatically generated to outline the V9 Architectural Updates._
 
